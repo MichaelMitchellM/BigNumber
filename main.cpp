@@ -14,50 +14,32 @@ int main(){
 
 	uint2048 num_a, num_b;
 
-	num_a = 13450560741990389923ull;
-
+	num_a = 13450560741990389921ull;
 	num_b = 47ull;
 
-	uint2048 d = num_a - 1ull;
-
-	while (!(d & 1ull)){
-		d >>= 1u;
-	}
-
-	uint2048 base = 2ull;
-	uint2048 exp = d;
-	uint2048 mod = num_a;
-	uint2048 res = 1ull;
+	num_a = uint2048::Random(65u , &r);
+	num_b = uint2048::Random(256u, &r);
 
 	/*
-	while (exp > 0ull){
-		if (exp & 1ull) res = (res * base) % mod;
-		exp >>= 1u;
-		base = (base * base) % mod;
-	}
-	*/
-
-	num_a = uint2048::Random(128u, &r);
-	num_b = uint2048::Random(100u, &r);
-
-
 	std::cout << num_a.to_bitset() << std::endl;
 	std::cout << num_b.to_bitset() << std::endl;
 
-	std::cout << "division\n";
-	std::cout << (num_a / num_b).to_bitset() << std::endl;
+	std::cout << (num_a * num_b).to_bitset() << std::endl;
+	*/
 
-	std::cout << "modulus\n";
-	std::cout << (num_a % num_b).to_bitset() << std::endl;
-
-
+	if (!(num_a & 1ull)){
+		++num_a;
+	}
 
 	auto is = false;
-	//while (!is){
-		//std::cout << num_a.to_bitset().to_ullong() << std::endl;
-		//std::cout << (is = miller_rabin_test(num_a, 10, &r)) << std::endl;
-		++num_a;
-	//}
+	while (!is){
+		std::cout << (is = miller_rabin_test(num_a, 10, &r)) << std::endl;
+		if (is) break;
+		num_a += 2ull;
+	}
+	std::cout << num_a.to_bitset() << std::endl;
+
+
 
 	printf("ding!\n");
 	std::cin.ignore(1000, '\n');

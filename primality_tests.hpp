@@ -33,35 +33,28 @@ bool miller_rabin_test(const uint2048& num, const unsigned accuracy, std::mt1993
 		a = uint2048::Random(2ull, num - 2ull, mt_rand);
 		uint2048 x{ 1ull };
 
-
 		// right to left binary method for modular exponentiation
 
-		//uint2048 base = a % num; // ? (a % num) will always equal a
-		uint2048 base = a;
+		uint2048 base = a % num; // ? (a % num) will always equal a
 		uint2048 exp = d;
 
-		std::cout << a.to_bitset().to_ullong() << std::endl;
-		std::cout << base.to_bitset().to_ullong() << std::endl;
-		std::cout << exp.to_bitset().to_ullong() << std::endl;
-		printf("loop\n");
-
 		while (exp > 0ull){
-			if (exp & 1ull){
-				x = (x * base) % num;
-				std::cout << x.to_bitset().to_ullong() << std::endl;
-			}
+			if (exp & 1ull) x = (x * base) % num;
 			exp >>= 1u;
 			base = (base * base) % num;
 		}
-
 
 		if (x == 1ull || x == (num - 1ull)) continue;
 		
 		for (auto i = 0u; i < (s - 1u); ++i){
 			x = (x * x) % num;
-			if (x == 1ull) return false;
+			if (x == 1ull){
+				//printf("newp!\n");
+				return false;
+			}
 			if (x == (num - 1ull)) goto end_loop;
 		}
+		//printf("boop!\n");
 		return false;
 	end_loop:;
 	}

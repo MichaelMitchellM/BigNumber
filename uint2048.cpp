@@ -87,7 +87,7 @@ std::bitset<2048> uint2048::to_bitset(){
 
 // --- operators ---
 
-// - relational -
+// - comparison -
 
 bool uint2048::operator<(const uint2048& num) const{
 	uint64_t a, b;
@@ -96,6 +96,7 @@ bool uint2048::operator<(const uint2048& num) const{
 		a = parts_[31u - i];
 		b = num.parts_[31u - i];
 		if (a < b) return true;
+		else if (b < a) return false;
 	}
 	return false;
 }
@@ -470,12 +471,7 @@ uint2048 uint2048::operator%(const uint2048& num) const{
 	*/
 
 	quotient = *this / num;
-
-	std::cout << quotient.to_bitset() << std::endl;
-
 	remainder = *this - (num * quotient);
-
-
 	return remainder;
 }
 
