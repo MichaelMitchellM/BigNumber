@@ -29,30 +29,35 @@ int main(){
 	uint2048 mod = num_a;
 	uint2048 res = 1ull;
 
+	/*
 	while (exp > 0ull){
 		if (exp & 1ull) res = (res * base) % mod;
 		exp >>= 1u;
 		base = (base * base) % mod;
 	}
-	
-	printf("result: %ull\n\n", res.to_bitset().to_ullong());
+	*/
 
 	num_a = uint2048::Random(128u, &r);
-	num_b = uint2048::Random(120u, &r);
+	num_b = uint2048::Random(100u, &r);
+
 
 	std::cout << num_a.to_bitset() << std::endl;
 	std::cout << num_b.to_bitset() << std::endl;
 
+	std::cout << "division\n";
 	std::cout << (num_a / num_b).to_bitset() << std::endl;
 
-	/*
+	std::cout << "modulus\n";
+	std::cout << (num_a % num_b).to_bitset() << std::endl;
+
+
+
 	auto is = false;
-	while (!is){
+	//while (!is){
 		//std::cout << num_a.to_bitset().to_ullong() << std::endl;
-		std::cout << (is = miller_rabin_test(num_a, 10, &r)) << std::endl;
+		//std::cout << (is = miller_rabin_test(num_a, 10, &r)) << std::endl;
 		++num_a;
-	}
-	*/
+	//}
 
 	printf("ding!\n");
 	std::cin.ignore(1000, '\n');

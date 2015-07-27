@@ -367,13 +367,15 @@ uint2048 uint2048::operator*(const uint2048& num) const{
 // division
 
 /*
-divides using binary long division
+divides using long division
 */
 uint2048 uint2048::operator/(const uint2048& divisor) const{
 	uint2048 quotient;
+	// ! need better way to handle division by 0, expections are gross
+	// perhaps an error flag in the object?
 	if (divisor > *this || divisor == 0ull) return quotient;
 	uint2048 dividend, remainder;
-	uint2048 temp;
+	uint2048 offering;
 	uint16_t dividend_bits, divisor_bits, remainder_bits;
 	uint16_t bits_from_dividend;
 
@@ -381,30 +383,76 @@ uint2048 uint2048::operator/(const uint2048& divisor) const{
 	dividend_bits = dividend.num_bits();
 	divisor_bits = divisor.num_bits();
 	remainder_bits = 0u;
+	
+	// loop while there are more bits to divide into
 	while ((dividend_bits + remainder_bits) >= divisor_bits){
+		
+		// determine how many bits are needed from the dividend
 		bits_from_dividend = divisor_bits - remainder_bits;
+
+		// if there are remainder bits
 		if (remainder_bits){
-			temp = remainder << bits_from_dividend;
-			temp = temp + (dividend >> (dividend_bits - bits_from_dividend));
+			// push the remainder into the offering with trailing zeros
+			// equal to the number of bits from the dividend
+			offering = remainder << bits_from_dividend;
+
+			// take the the most significant bits from the dividend
+			// and add them to the offering.
+			// the number of bits to take from the dividend are equal to
+			// bits_from_dividend
+			offering += (dividend >> (dividend_bits - bits_from_dividend));
 		}
-		else temp = dividend >> (dividend_bits - bits_from_dividend);
-		dividend = dividend << (2048u - (dividend_bits - bits_from_dividend));
-		dividend = dividend >> (2048u - (dividend_bits - bits_from_dividend));
-		quotient = quotient << bits_from_dividend;
+		else{
+			// there are no remainder bits to add to the offering.
+			// only take bits from the dividend
+			offering = dividend >> (dividend_bits - bits_from_dividend);
+		}
+		
+		// chop off the most significant bits from the dividend.
+		// takes a number of bits equal to bits_from_dividend
+		dividend <<= (2048u - (dividend_bits - bits_from_dividend));
+		dividend >>= (2048u - (dividend_bits - bits_from_dividend));
+
+		// push the bits in quotient to the left by bits_from_dividend
+		quotient <<= bits_from_dividend;
+
+		// calculate the number of bits left in the dividend
 		dividend_bits = dividend_bits - bits_from_dividend;
-		while (temp < divisor){
+
+		// loop until the offering is greater than or equal to
+		// the divisor
+		while (offering < divisor){
+			// if there are no more bits in the dividend return the quotient
 			if (!dividend_bits) return quotient;
-			temp = temp << 1u;
-			temp = temp + (dividend >> (dividend_bits - 1u));
-			dividend = dividend << (2048u - (dividend_bits - 1u));
-			dividend = dividend >> (2048u - (dividend_bits - 1u));
-			quotient = quotient << 1u;
+
+			// shift the bits in the offering 1 to the left
+			offering <<= 1u;
+
+			// add the most significant bit in the dividend to the offering
+			offering += (dividend >> (dividend_bits - 1u));
+
+			// chop off the most significant bit from the dividend
+			dividend <<= (2048u - (dividend_bits - 1u));
+			dividend >>= (2048u - (dividend_bits - 1u));
+
+			// shift the bits in the quotient 1 to the left
+			quotient <<= 1u;
+
+			// decrement dividend_bits
 			--dividend_bits;
 		}
+
+		// increment quotient
 		++quotient;
-		remainder = temp - divisor;
+
+		// calculate the remainder
+		remainder = offering - divisor;
+
+		// get the number of bits in the remainder
 		remainder_bits = remainder.num_bits();
 	}
+
+	// shift the bits in the quotient to the left by dividend_bits
 	quotient <<= dividend_bits;
 	return quotient;
 }
@@ -414,8 +462,20 @@ uint2048 uint2048::operator%(const uint2048& num) const{
 	uint2048 quotient;
 	uint2048 remainder;
 	
+	// ! test this
+	/*
+	if (*this < num){
+		return *this;
+	}
+	*/
+
 	quotient = *this / num;
+
+	std::cout << quotient.to_bitset() << std::endl;
+
 	remainder = *this - (num * quotient);
+
+
 	return remainder;
 }
 
@@ -478,6 +538,7 @@ uint2048& uint2048::operator<<=(uint16_t num){
 	uint8_t shift = num / 64u;
 
 	for (auto i = 0u; i < (32u - shift); ++i) parts_[i + shift] = parts_[i];
+	for (auto i = 0u; i < shift; ++i) parts_[i] = 0ull;
 	if (num %= 64u)
 		for (auto i = 0u; i < 32u; ++i){
 			a = parts_[i];
@@ -518,6 +579,7 @@ uint2048& uint2048::operator>>=(uint16_t num){
 	uint16_t shift = num / 64u;
 
 	for (auto i = 0u; i < (32u - shift); ++i) parts_[i] = parts_[i + shift];
+	for (auto i = 0u; i < shift; ++i) parts_[31u - i] = 0ull;
 	if (num % 64u)
 		for (auto i = 0u; i < 32u; ++i){
 			a = parts_[31u - i];

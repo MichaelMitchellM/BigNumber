@@ -38,6 +38,7 @@ public:
 
 	std::bitset<2048> to_bitset();
 
+	// ! is buggy
 	static uint2048 Random(uint16_t num_bits, std::mt19937_64* mt_rand){
 		uint2048 ret;
 		uint8_t num_loops;
