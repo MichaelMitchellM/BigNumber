@@ -43,3 +43,11 @@ Temporary Items
 .apdisk
 *.vcxproj
 BigNumber.vcxproj.filters
+*.log
+Debug/BigNumber.tlog/BigNumber.lastbuildstate
+*.tlog
+Debug/vc120.pdb
+*.obj
+Debug/vc120.idb
+*.pdb
+x64/Debug/vc120.idb
