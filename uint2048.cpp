@@ -117,7 +117,7 @@ bool uint2048::operator==(const uint2048& num) const{
 	uint64_t a, b;
 
 	for (auto i = 0u; i < 32u; ++i){
-		a = parts_[31u - i];
+		a = this->parts_[31u - i];
 		b = num.parts_[31u - i];
 		if (a != b) return false;
 	}
@@ -510,8 +510,8 @@ uint2048 uint2048::operator<<(uint16_t num) const{
 	uint2048 ret;
 	if (num >= 2048u) return ret;
 	uint64_t a, b;
-	uint64_t overflow = 0ull;
-	uint8_t shift = num / 64u;
+	auto overflow = 0ull;
+	auto shift = num / 64u;
 
 	for (auto i = 0u; i < (32u - shift); ++i) ret.parts_[i + shift] = parts_[i];
 	if (num %= 64u)
@@ -530,10 +530,10 @@ uint2048& uint2048::operator<<=(uint16_t num){
 		return *this;
 	}
 	uint64_t a, b;
-	uint64_t overflow = 0ull;
-	uint8_t shift = num / 64u;
+	auto overflow = 0ull;
+	auto shift = num / 64u;
 
-	for (auto i = 0u; i < (32u - shift); ++i) parts_[i + shift] = parts_[i];
+	for (auto i = 0u; i < (32u - shift); ++i) parts_[31u - i] = parts_[31u - i - shift];
 	for (auto i = 0u; i < shift; ++i) parts_[i] = 0ull;
 	if (num %= 64u)
 		for (auto i = 0u; i < 32u; ++i){
@@ -542,6 +542,7 @@ uint2048& uint2048::operator<<=(uint16_t num){
 			parts_[i] = b + overflow;
 			overflow = a >> (64u - num);
 		}
+		
 	return *this;
 }
 
@@ -551,8 +552,8 @@ uint2048 uint2048::operator>>(uint16_t num) const{
 	uint2048 ret;
 	if (num >= 2048u) return ret;
 	uint64_t a, b;
-	uint64_t overflow = 0ull;
-	uint16_t shift = num / 64u;
+	auto overflow = 0ull;
+	auto shift = num / 64u;
 
 	for (auto i = 0u; i < (32u - shift); ++i) ret.parts_[i] = parts_[i + shift];
 	if (num %= 64u)
@@ -571,8 +572,8 @@ uint2048& uint2048::operator>>=(uint16_t num){
 		return *this;
 	}
 	uint64_t a, b;
-	uint64_t overflow = 0ull;
-	uint16_t shift = num / 64u;
+	auto overflow = 0ull;
+	auto shift = num / 64u;
 
 	for (auto i = 0u; i < (32u - shift); ++i) parts_[i] = parts_[i + shift];
 	for (auto i = 0u; i < shift; ++i) parts_[31u - i] = 0ull;
