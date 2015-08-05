@@ -38,7 +38,9 @@ public:
 
 	std::bitset<2048> to_bitset();
 
-	// ! is buggy
+	/*
+	generates a uint2048 with a given bit length
+	*/
 	static uint2048 Random(uint16_t num_bits, std::mt19937_64* mt_rand){
 		uint2048 ret;
 		uint8_t num_loops;
@@ -57,7 +59,7 @@ public:
 			if (r >> (overflow - 1u) != 1u){
 				auto to_add = 1ull;
 				
-				to_add <<= overflow;
+				to_add <<= overflow - 1u;
 				r += to_add;
 			}
 			ret.parts_[num_loops] = r;
@@ -65,6 +67,9 @@ public:
 		return ret;
 	}
 
+	/*
+	generates a uint2048 within given bounds
+	*/
 	static uint2048 Random(const uint2048& min, const uint2048& max, std::mt19937_64* mt_rand){
 		uint2048 ret;
 		uint16_t max_bits;
@@ -76,56 +81,59 @@ public:
 		return ret;
 	}
 
-	// ? make operators static
-
 	// --- operators ---
-	// - comparison -
 
-	// ! TODO implement for uint64_t
-	bool operator<(const uint2048& num) const;
-	bool operator>(const uint2048& num) const;
-	bool operator<=(const uint2048& num) const;
-	bool operator>=(const uint2048& num) const;
-	bool operator==(const uint2048& num) const;
-	bool operator==(uint64_t num) const;
-	bool operator!=(const uint2048& num) const;
+	// - assignment -
 
-	// - arithmetic -
+	friend uint2048& operator+=(uint2048& operand_a, const uint2048& operand_b);
+	friend uint2048& operator+=(uint2048& operand_a, uint64_t operand_b);
 
-	// addition
-	uint2048 operator+(const uint2048& num) const;
-	uint2048 operator+(uint64_t num) const;
-	uint2048& operator+=(const uint2048& num);
+	friend uint2048& operator-=(uint2048& operand_a, const uint2048& operand_b);
+
+	friend uint2048& operator%=(uint2048& operand_dividend, const uint2048& operand_divisor);
+
+	friend uint2048& operator<<=(uint2048& operand_a, uint16_t operand_b);
+	friend uint2048& operator>>=(uint2048& operand_a, uint16_t operand_b);
+
+	// - increment/decrement -
+	
 	uint2048& operator++();
 	uint2048 operator++(int);
 
-	// subtraction
-	uint2048 operator-(const uint2048& num) const;
-	uint2048 operator-(uint64_t num) const;
-	uint2048 operator-=(const uint2048& num);
-	// ! TODO implement w/ uint64_t
+	// - arithmetic -
 
-	// multiplication
-	uint2048 operator*(const uint2048& num) const;
+	friend uint2048 operator+(const uint2048& operand_a, const uint2048& operand_b);
+	friend uint2048 operator+(const uint2048& operand_a, uint64_t operand_b);
+	friend uint2048 operator+(uint64_t operand_a, const uint2048& operand_b);
 
-	// division
-	// ! TODO implement w/ uint64_t
-	uint2048 operator/(const uint2048& divisor) const;
+	friend uint2048 operator-(const uint2048& operand_a, const uint2048& operand_b);
+	friend uint2048 operator-(const uint2048& operand_a, uint64_t operand_b);
 
-	// modulo
-	// ! TODO implement w/ uint64_t
-	uint2048 operator%(const uint2048& divisor) const;
-	uint2048& operator%=(const uint2048& divisor);
-	// bitwise AND
-	uint2048 operator&(const uint2048& num) const;
-	uint64_t operator&(uint64_t) const;
+	friend uint2048 operator*(const uint2048& operand_a, const uint2048& operand_b);
 
-	// bitshift left
-	uint2048 operator<<(uint16_t num) const;
-	uint2048& operator<<=(uint16_t num);
+	friend uint2048 operator/(const uint2048& dividend, const uint2048& divisor);
 
-	// bitshift right
-	uint2048 operator>>(uint16_t num) const;
-	uint2048& operator>>=(uint16_t num);
+	friend uint2048 operator%(const uint2048& operand_dividend, const uint2048& operand_divisor);
+
+	friend uint2048 operator&(const uint2048& operand_a, const uint2048& operand_b);
+	friend uint64_t operator&(const uint2048& operand_a, uint64_t operand_b);
+	
+	friend uint2048 operator<<(const uint2048& operand_a, uint16_t operand_b);
+	friend uint2048 operator>>(const uint2048& operand_a, uint16_t operand_b);
+
+	// - comparison
+
+	friend bool operator==(const uint2048& operand_a, const uint2048& operand_b);
+	friend bool operator==(const uint2048& operand_a, uint64_t operand_b);
+	
+	friend bool operator!=(const uint2048& operand_a, const uint2048& operand_b);
+
+	friend bool operator<(const uint2048& operand_a, const uint2048& operand_b);
+
+	friend bool operator>(const uint2048& operand_a, const uint2048& operand_b);
+
+	friend bool operator<=(const uint2048& operand_a, const uint2048& operand_b);
+
+	friend bool operator>=(const uint2048& operand_a, const uint2048& operand_b);
 
 };

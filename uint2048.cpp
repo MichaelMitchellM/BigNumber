@@ -87,71 +87,17 @@ std::bitset<2048> uint2048::to_bitset(){
 
 // --- operators ---
 
-// - comparison -
+// - assignment -
 
-bool uint2048::operator<(const uint2048& num) const{
-	uint64_t a, b;
-
-	for (auto i = 0u; i < 32u; ++i){
-		a = parts_[31u - i];
-		b = num.parts_[31u - i];
-		if (a < b) return true;
-		else if (b < a) return false;
-	}
-	return false;
-}
-
-bool uint2048::operator>(const uint2048& num) const{
-	return num < *this;
-}
-
-bool uint2048::operator<=(const uint2048& num) const{
-	return !(num < *this);
-}
-
-bool uint2048::operator>=(const uint2048& num) const{
-	return !(*this < num);
-}
-
-bool uint2048::operator==(const uint2048& num) const{
-	uint64_t a, b;
-
-	for (auto i = 0u; i < 32u; ++i){
-		a = this->parts_[31u - i];
-		b = num.parts_[31u - i];
-		if (a != b) return false;
-	}
-	return true;
-}
-
-bool uint2048::operator==(uint64_t num) const{
-	uint64_t a;
-
-	for (auto i = 0u; i < 31u; ++i){
-		a = parts_[31u - i];
-		if (a != 0ull) return false;
-	}
-	return parts_[0] == num;
-}
-
-bool uint2048::operator!=(const uint2048& num) const{
-	return !(*this == num);
-
-}
-
-// - arithmetic -
-
-// addition
-uint2048 uint2048::operator+(const uint2048& num) const{
-	uint2048 ret;
+uint2048& operator+=(uint2048& operand_a, const uint2048& operand_b){
 	uint64_t a, b;
 	uint64_t* c;
 	uint8_t carry_flag = 0u;
 
 	for (auto i = 0u; i < 32u; ++i){
-		a = parts_[i];
-		b = num.parts_[i];
-		c = &(ret.parts_[i]);
+		a = operand_a.parts_[i];
+		b = operand_b.parts_[i];
+		c = &(operand_a.parts_[i]);
 
 		// intrinsic function
 		// adcx instruction
@@ -159,28 +105,27 @@ uint2048 uint2048::operator+(const uint2048& num) const{
 		// carry_flag is set to 1 if there is a carry bit
 		carry_flag = _addcarry_u64(carry_flag, a, b, c);
 	}
-	return ret;
-}
 
-uint2048 uint2048::operator+(uint64_t num) const{
-	uint2048 ret;
+	return operand_a;
+}
+uint2048& operator+=(uint2048& operand_a, uint64_t operand_b){
 	uint64_t a;
 	uint64_t* b;
 	uint8_t carry_flag = 0u;
 
-	a = parts_[0u];
-	b = &(ret.parts_[0u]);
+	a = operand_a.parts_[0u];
+	b = &(operand_a.parts_[0u]);
 
 	// intrinsic function
 	// adcx instruction
 	// *c = a + b + carry
 	// carry_flag is set to 1 if there is a carry bit
-	carry_flag = _addcarry_u64(carry_flag, a, num, b);
+	carry_flag = _addcarry_u64(carry_flag, a, operand_b, b);
 
-	if (carry_flag)
+	if (carry_flag){
 		for (auto i = 1u; i < 32u; ++i){
-			a = parts_[i];
-			b = &(ret.parts_[i]);
+			a = operand_a.parts_[i];
+			b = &(operand_a.parts_[i]);
 
 			// intrinsic function
 			// adcx instruction
@@ -189,30 +134,97 @@ uint2048 uint2048::operator+(uint64_t num) const{
 
 			if (!carry_flag) break;
 		}
-	return ret;
-}
-
-uint2048& uint2048::operator+=(const uint2048& num){
-	uint64_t a, b;
-	uint64_t* c;
-	uint8_t carry_flag = 0u;
-
-	for (auto i = 0u; i < 32u; ++i){
-		a = this->parts_[i];
-		b = num.parts_[i];
-		c = &(this->parts_[i]);
-
-		// intrinsic function
-		// adcx instruction
-		// *c = a + b + carry
-		// carry_flag is set to 1 if there is a carry bit
-		carry_flag = _addcarry_u64(carry_flag, a, b, c);
 	}
 
-	return *this;
+	return operand_a;
 }
 
-// ++increment
+uint2048& operator-=(uint2048& operand_a, const uint2048& operand_b){
+	uint64_t a, b;
+	uint64_t* c;
+	uint8_t borrow_flag = 0u;
+
+	for (auto i = 0u; i < 32u; ++i){
+		a = operand_a.parts_[i];
+		b = operand_b.parts_[i];
+		c = &(operand_a.parts_[i]);
+
+		// intrinsic function
+		// sbb instruction
+		// *c = a - (b + borrow)
+		// borrow_flag is set to 1 if (a < (b + borrow))
+		borrow_flag = _subborrow_u64(borrow_flag, a, b, c);
+	}
+	return operand_a;
+}
+
+uint2048& operator%=(uint2048& operand_dividend, const uint2048& operand_divisor){
+	uint2048 quotient;
+
+	if (operand_dividend < operand_divisor) return operand_dividend;
+	quotient = operand_dividend / operand_divisor;
+	operand_dividend -= (operand_divisor * quotient);
+	return operand_dividend;
+}
+
+uint2048& operator<<=(uint2048& operand_a, uint16_t operand_b){
+	if (operand_b >= 2048u){
+		for (auto i = 0u; i < 32u; ++i) operand_a.parts_[i] = 0ull;
+		return operand_a;
+	}
+	uint64_t a, b, c;
+	auto overflow = 0ull;
+	auto shift = operand_b / 64u;
+
+	if (shift){
+		for (auto i = 0u; i < (32u - shift); ++i) operand_a.parts_[31u - i] = operand_a.parts_[31u - i - shift];
+		for (auto i = 0u; i < shift; ++i) operand_a.parts_[i] = 0ull;
+	}
+	if (operand_b %= 64u){
+		for (auto i = 0u; i < 32u; ++i){
+			a = operand_a.parts_[i];
+			b = a << operand_b;
+			c = b + overflow;
+			overflow = a >> (64u - operand_b);
+			operand_a.parts_[i] = c;
+		}
+	}
+
+	return operand_a;
+}
+uint2048& operator>>=(uint2048& operand_a, uint16_t operand_b){
+	// if the input is greater than or equal to 2048
+	//   set all unsigned long longs in parts_ to zero
+	//   return reference to *this
+	if (operand_b >= 2048u){
+		for (auto i = 0u; i < 32u; ++i) operand_a.parts_[i] = 0ull;
+		return operand_a;
+	}
+
+	uint64_t a, b, c;
+
+	auto overflow = 0ull;
+	auto shift = operand_b / 64u;
+
+	if (shift){
+		for (auto i = 0u; i < (32u - shift); ++i)
+			operand_a.parts_[i] = operand_a.parts_[i + shift];
+		for (auto i = 0u; i < shift; ++i)
+			operand_a.parts_[31u - i] = 0ull;
+	}
+	if (operand_b %= 64u)
+		for (auto i = 0u; i < 32u; ++i){
+			a = operand_a.parts_[31u - i];
+			b = a >> operand_b;
+			c = b + overflow;
+			overflow = a << (64u - operand_b);
+			operand_a.parts_[31u - i] = c;
+		}
+	return operand_a;
+}
+
+// - increment / decrement -
+
 uint2048& uint2048::operator++(){
 	uint64_t a;
 	uint64_t* b;
@@ -242,8 +254,6 @@ uint2048& uint2048::operator++(){
 		}
 	return *this;
 }
-
-// increment++
 uint2048 uint2048::operator++(int){
 	uint2048 ret;
 	uint64_t a;
@@ -276,16 +286,100 @@ uint2048 uint2048::operator++(int){
 	return ret;
 }
 
-// subtraction
-uint2048 uint2048::operator-(const uint2048& num) const{
+// - arithmetic -
+
+uint2048 operator+(const uint2048& operand_a, const uint2048& operand_b){
+	printf("beh?\n");
+	uint2048 ret;
+	uint64_t a, b;
+	uint64_t* c;
+	uint8_t carry_flag = 0u;
+
+	for (auto i = 0u; i < 32u; ++i){
+		a = operand_a.parts_[i];
+		b = operand_b.parts_[i];
+		c = &(ret.parts_[i]);
+
+		// intrinsic function
+		// adcx instruction
+		// *c = a + b + carry
+		// carry_flag is set to 1 if there is a carry bit
+		carry_flag = _addcarry_u64(carry_flag, a, b, c);
+	}
+	return ret;
+}
+uint2048 operator+(const uint2048& operand_a, uint64_t operand_b){
+	uint2048 ret;
+	uint64_t a;
+	uint64_t* b;
+	uint8_t carry_flag = 0u;
+
+	a = operand_a.parts_[0u];
+	b = &(ret.parts_[0u]);
+
+	// intrinsic function
+	// adcx instruction
+	// *c = a + b + carry
+	// carry_flag is set to 1 if there is a carry bit
+	carry_flag = _addcarry_u64(carry_flag, a, operand_b, b);
+
+	if (carry_flag){
+		for (auto i = 1u; i < 32u; ++i){
+			a = operand_a.parts_[i];
+			b = &(ret.parts_[i]);
+
+			// intrinsic function
+			// adcx instruction
+			// *c = a + b + carry
+			carry_flag = _addcarry_u64(carry_flag, a, 0, b);
+
+			if (!carry_flag) break;
+		}
+	}
+		
+	return ret;
+}
+uint2048 operator+(uint64_t operand_a, const uint2048& operand_b){
+	uint2048 ret;
+	uint64_t a;
+	uint64_t* b;
+	uint8_t carry_flag = 0u;
+
+	a = operand_b.parts_[0u];
+	b = &(ret.parts_[0u]);
+
+	// intrinsic function
+	// adcx instruction
+	// *c = a + b + carry
+	// carry_flag is set to 1 if there is a carry bit
+	carry_flag = _addcarry_u64(carry_flag, a, operand_a, b);
+
+	if (carry_flag){
+		for (auto i = 1u; i < 32u; ++i){
+			a = operand_b.parts_[i];
+			b = &(ret.parts_[i]);
+
+			// intrinsic function
+			// adcx instruction
+			// *c = a + b + carry
+			carry_flag = _addcarry_u64(carry_flag, a, 0, b);
+
+			if (!carry_flag) break;
+		}
+	}
+
+	return ret;
+}
+
+uint2048 operator-(const uint2048& operand_a, const uint2048& operand_b){
 	uint2048 ret;
 	uint64_t a, b;
 	uint64_t* c;
 	uint8_t borrow_flag = 0u;
 
 	for (auto i = 0u; i < 32u; ++i){
-		a = parts_[i];
-		b = num.parts_[i];
+		a = operand_a.parts_[i];
+		b = operand_b.parts_[i];
 		c = &(ret.parts_[i]);
 
 		// intrinsic function
@@ -296,25 +390,24 @@ uint2048 uint2048::operator-(const uint2048& num) const{
 	}
 	return ret;
 }
-
-uint2048 uint2048::operator-(uint64_t num) const{
+uint2048 operator-(const uint2048& operand_a, uint64_t operand_b){
 	uint2048 ret;
 	uint64_t a;
 	uint64_t* b;
 	uint8_t borrow_flag = 0u;
 
-	a = parts_[0];
+	a = operand_a.parts_[0];
 	b = &(ret.parts_[0]);
 
 	// intrinsic function
 	// sbb instruction
 	// *c = a - (num + borrow)
 	// borrow_flag is set to 1 if (a < (b + borrow))
-	borrow_flag = _subborrow_u64(borrow_flag, a, num, b);
+	borrow_flag = _subborrow_u64(borrow_flag, a, operand_b, b);
 
 	if (borrow_flag){
 		for (auto i = 1u; i < 32u; ++i){
-			a = parts_[i];
+			a = operand_a.parts_[i];
 			b = &(ret.parts_[i]);
 
 			// intrinsic function
@@ -326,37 +419,25 @@ uint2048 uint2048::operator-(uint64_t num) const{
 			if (!borrow_flag) break;
 		}
 	}
+	else{
+		for (auto i = 1u; i < 32u; ++i) ret.parts_[i] = operand_a.parts_[i];
+	}
 	return ret;
 }
 
-uint2048 uint2048::operator-=(const uint2048& num){
-	uint64_t a, b;
-	uint64_t* c;
-	uint8_t borrow_flag = 0u;
-
-	for (auto i = 0u; i < 32u; ++i){
-		a = this->parts_[i];
-		b = num.parts_[i];
-		c = &(this->parts_[i]);
-
-		// intrinsic function
-		// sbb instruction
-		// *c = a - (b + borrow)
-		// borrow_flag is set to 1 if (a < (b + borrow))
-		borrow_flag = _subborrow_u64(borrow_flag, a, b, c);
-	}
-	return *this;
-}
-
-// multiplication
-uint2048 uint2048::operator*(const uint2048& num) const{
+uint2048 operator*(const uint2048& operand_a, const uint2048& operand_b){
 	uint2048 ret;
+
+	if (operand_b == 0ull || operand_a == 0ull) return ret;
+	if (operand_b == 1ull) return operand_a;
+	if (operand_a == 1ull) return operand_b;
+
 	uint2048 temp_a, temp_b;
 	uint16_t num_loops;
 
-	num_loops = num.num_bits();
-	temp_a = num;
-	temp_b = *this;
+	num_loops = operand_b.num_bits();
+	temp_a = operand_b;
+	temp_b = operand_a;
 	for (auto i = 0u; i < num_loops; ++i){
 		if (temp_a & 1ull) ret += temp_b;
 		temp_a >>= 1u;
@@ -365,29 +446,24 @@ uint2048 uint2048::operator*(const uint2048& num) const{
 	return ret;
 }
 
-// division
-
-/*
-divides using long division
-*/
-uint2048 uint2048::operator/(const uint2048& divisor) const{
+uint2048 operator/(const uint2048& operand_dividend, const uint2048& operand_divisor){
 	uint2048 quotient;
 	// ! need better way to handle division by 0, expections are gross
 	// perhaps an error flag in the object?
-	if (divisor > *this || divisor == 0ull) return quotient;
+	if (operand_divisor > operand_dividend || operand_divisor == 0ull) return quotient;
 	uint2048 dividend, remainder;
 	uint2048 offering;
 	uint16_t dividend_bits, divisor_bits, remainder_bits;
 	uint16_t bits_from_dividend;
 
-	dividend = *this;
+	dividend = operand_dividend;
 	dividend_bits = dividend.num_bits();
-	divisor_bits = divisor.num_bits();
+	divisor_bits = operand_divisor.num_bits();
 	remainder_bits = 0u;
-	
+
 	// loop while there are more bits to divide into
 	while ((dividend_bits + remainder_bits) >= divisor_bits){
-		
+
 		// determine how many bits are needed from the dividend
 		bits_from_dividend = divisor_bits - remainder_bits;
 
@@ -408,7 +484,7 @@ uint2048 uint2048::operator/(const uint2048& divisor) const{
 			// only take bits from the dividend
 			offering = dividend >> (dividend_bits - bits_from_dividend);
 		}
-		
+
 		// chop off the most significant bits from the dividend.
 		// takes a number of bits equal to bits_from_dividend
 		dividend <<= (2048u - (dividend_bits - bits_from_dividend));
@@ -422,7 +498,7 @@ uint2048 uint2048::operator/(const uint2048& divisor) const{
 
 		// loop until the offering is greater than or equal to
 		// the divisor
-		while (offering < divisor){
+		while (offering < operand_divisor){
 			// if there are no more bits in the dividend return the quotient
 			if (!dividend_bits) return quotient;
 
@@ -433,8 +509,8 @@ uint2048 uint2048::operator/(const uint2048& divisor) const{
 			offering += (dividend >> (dividend_bits - 1u));
 
 			// chop off the most significant bit from the dividend
-			dividend <<= (2048u - (dividend_bits - 1u));
-			dividend >>= (2048u - (dividend_bits - 1u));
+			dividend <<= (2049u - dividend_bits);
+			dividend >>= (2049u - dividend_bits);
 
 			// shift the bits in the quotient 1 to the left
 			quotient <<= 1u;
@@ -447,7 +523,7 @@ uint2048 uint2048::operator/(const uint2048& divisor) const{
 		++quotient;
 
 		// calculate the remainder
-		remainder = offering - divisor;
+		remainder = offering - operand_divisor;
 
 		// get the number of bits in the remainder
 		remainder_bits = remainder.num_bits();
@@ -458,132 +534,118 @@ uint2048 uint2048::operator/(const uint2048& divisor) const{
 	return quotient;
 }
 
-// modulo
-uint2048 uint2048::operator%(const uint2048& num) const{
+uint2048 operator%(const uint2048& operand_dividend, const uint2048& operand_divisor){
 	uint2048 quotient;
 	uint2048 remainder;
-	
-	// ! test this
-	/*
-	if (*this < num){
-		return *this;
-	}
-	*/
 
-	quotient = *this / num;
-	remainder = *this - (num * quotient);
+	if (operand_dividend < operand_divisor) return operand_dividend;
+	quotient = operand_dividend / operand_divisor;
+	remainder = operand_dividend - (operand_divisor * quotient);
 	return remainder;
 }
 
-uint2048& uint2048::operator%=(const uint2048& num){
-	uint2048 quotient;
-
-	quotient = *this / num;
-	*this -= (num * quotient);
-	return *this;
-}
-
-// bitwise AND
-uint2048 uint2048::operator&(const uint2048& num) const{
+uint2048 operator&(const uint2048& operand_a, const uint2048& operand_b){
 	uint2048 ret;
 	uint64_t a, b;
 
 	for (auto i = 0u; i < 32u; ++i){
-		a = this->parts_[i];
-		b = num.parts_[i];
+		a = operand_a.parts_[i];
+		b = operand_b.parts_[i];
 		ret.parts_[i] = a & b;
 	}
 	return ret;
 }
-
-uint64_t uint2048::operator&(uint64_t num) const{
+uint64_t operator&(const uint2048& operand_a, uint64_t operand_b){
 	uint64_t ret;
 	uint64_t a;
 
-	a = this->parts_[0u];
-	ret = a & num;
+	a = operand_a.parts_[0u];
+	ret = a & operand_b;
 	return ret;
 }
 
-// bitshift left
-uint2048 uint2048::operator<<(uint16_t num) const{
+uint2048 operator<<(const uint2048& operand_a, uint16_t operand_b){
 	uint2048 ret;
-	if (num >= 2048u) return ret;
+	if (operand_b >= 2048u) return ret;
 	uint64_t a, b;
 	auto overflow = 0ull;
-	auto shift = num / 64u;
+	auto shift = operand_b / 64u;
 
-	for (auto i = 0u; i < (32u - shift); ++i) ret.parts_[i + shift] = parts_[i];
-	if (num %= 64u)
+	for (auto i = 0u; i < (32u - shift); ++i) ret.parts_[i + shift] = operand_a.parts_[i];
+	if (operand_b %= 64u)
 		for (auto i = 0u; i < 32u; ++i){
 			a = ret.parts_[i];
-			b = a << num;
+			b = a << operand_b;
 			ret.parts_[i] = b + overflow;
-			overflow = a >> (64u - num);
+			overflow = a >> (64u - operand_b);
 		}
 	return ret;
 }
-
-uint2048& uint2048::operator<<=(uint16_t num){
-	if (num >= 2048u){
-		for (auto i = 0u; i < 32u; ++i) parts_[i] = 0ull;
-		return *this;
-	}
-	uint64_t a, b;
-	auto overflow = 0ull;
-	auto shift = num / 64u;
-
-	for (auto i = 0u; i < (32u - shift); ++i) parts_[31u - i] = parts_[31u - i - shift];
-	for (auto i = 0u; i < shift; ++i) parts_[i] = 0ull;
-	if (num %= 64u)
-		for (auto i = 0u; i < 32u; ++i){
-			a = parts_[i];
-			b = a << num;
-			parts_[i] = b + overflow;
-			overflow = a >> (64u - num);
-		}
-		
-	return *this;
-}
-
-// bitshift right
-
-uint2048 uint2048::operator>>(uint16_t num) const{
+uint2048 operator>>(const uint2048& operand_a, uint16_t operand_b){
 	uint2048 ret;
-	if (num >= 2048u) return ret;
+	if (operand_b >= 2048u) return ret;
 	uint64_t a, b;
 	auto overflow = 0ull;
-	auto shift = num / 64u;
+	auto shift = operand_b / 64u;
 
-	for (auto i = 0u; i < (32u - shift); ++i) ret.parts_[i] = parts_[i + shift];
-	if (num %= 64u)
+	for (auto i = 0u; i < (32u - shift); ++i) ret.parts_[i] = operand_a.parts_[i + shift];
+	if (operand_b %= 64u)
 		for (auto i = 0u; i < 32u; ++i){
 			a = ret.parts_[31u - i];
-			b = a >> num;
+			b = a >> operand_b;
 			ret.parts_[31u - i] = b + overflow;
-			overflow = a << (64u - num);
+			overflow = a << (64u - operand_b);
 		}
 	return ret;
 }
 
-uint2048& uint2048::operator>>=(uint16_t num){
-	if (num >= 2048u){
-		for (auto i = 0u; i < 32u; ++i) parts_[i] = 0ull;
-		return *this;
-	}
-	uint64_t a, b;
-	auto overflow = 0ull;
-	auto shift = num / 64u;
+// - comparison -
 
-	for (auto i = 0u; i < (32u - shift); ++i) parts_[i] = parts_[i + shift];
-	for (auto i = 0u; i < shift; ++i) parts_[31u - i] = 0ull;
-	if (num % 64u)
-		for (auto i = 0u; i < 32u; ++i){
-			a = parts_[31u - i];
-			b = a >> num;
-			parts_[31u - i] = b + overflow;
-			overflow = a << (64u - num);
-		}
-	return *this;
+bool operator==(const uint2048& operand_a, const uint2048& operand_b){
+	uint64_t a, b;
+	for (auto i = 0u; i < 32u; ++i){
+		a = operand_a.parts_[31u - i];
+		b = operand_b.parts_[31u - i];
+		if (a != b) return false;
+	}
+	return true;
 }
+bool operator==(const uint2048& operand_a, uint64_t operand_b){
+	uint64_t a;
+	for (auto i = 0u; i < 31u; ++i){
+		a = operand_a.parts_[31u - i];
+		if (a != 0ull) return false;
+	}
+	return operand_a.parts_[0] == operand_b;
+}
+
+bool operator!=(const uint2048& operand_a, const uint2048& operand_b){
+	return !(operand_a == operand_b);
+}
+
+bool operator<(const uint2048& operand_a, const uint2048& operand_b){
+	uint64_t a, b;
+	for (auto i = 0u; i < 32u; ++i){
+		a = operand_a.parts_[31u - i];
+		b = operand_b.parts_[31u - i];
+		if (a < b) return true;
+		else if (b < a) return false;
+	}
+	return false;
+}
+
+bool operator>(const uint2048& operand_a, const uint2048& operand_b){
+	return operand_b < operand_a;
+}
+
+bool operator<=(const uint2048& operand_a, const uint2048& operand_b){
+	return !(operand_b < operand_a);
+}
+
+bool operator>=(const uint2048& operand_a, const uint2048& operand_b){
+	return !(operand_a < operand_b);
+}
+
+
+
 
