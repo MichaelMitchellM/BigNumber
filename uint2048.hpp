@@ -23,17 +23,41 @@ public:
 
 	// --- constructors ---
 	// - standard -
+
+	/*
+	default constructor
+	sets all unsigned long longs to zero
+	*/
 	uint2048();
+
+	/*
+	sets all but the least significant unsigned long long to zero.
+	the least significant is set to the 'num' argument
+	*/
 	uint2048(uint64_t num);
 
 	// - copy -
+
+	/*
+	copys the array from the input uint2048 into a new one
+	*/
 	uint2048(const uint2048& num);
 
 	// --- destructor ---
 	~uint2048(){}
 
 	// --- functions ---
+
+	/*
+	finds and returns the index of the most significant bit
+	*/
 	bool highest_bit(uint16_t* index) const;
+
+	/*
+	returns the number of bits the current number takes up.
+	the number of bits is equal to the index of the highest bit + 1
+	or if there are no bits, it is 0
+	*/
 	uint16_t num_bits() const;
 
 	std::bitset<2048> to_bitset();
@@ -137,3 +161,21 @@ public:
 	friend bool operator>=(const uint2048& operand_a, const uint2048& operand_b);
 
 };
+
+// --- static functions ---
+
+/*
+gcd_mod
+
+finds the greatest common divisor of two uint2048s.
+uses the Euclidean Algorithm with modulus.
+*/
+uint2048 gcd_mod(const uint2048& a, const uint2048& b);
+
+/*
+gcd_sub
+
+finds the greatest common divisor of two uint2048s.
+uses the Euclidean Algorithm with subtraction.
+*/
+uint2048 gcd_sub(const uint2048& a, const uint2048& b);

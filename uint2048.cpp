@@ -5,17 +5,10 @@
 
 // - standard -
 
-/*
-sets all unsigned long longs to zero
-*/
 uint2048::uint2048(){
 	for (auto i = 0u; i < 32u; ++i) parts_[i] = 0ull;
 }
 
-/*
-sets all but the least significant unsigned long long to zero.
-the least significant is set to the 'num' argument
-*/
 uint2048::uint2048(uint64_t num){
 	for (auto i = 1u; i < 32u; ++i) parts_[i] = 0ull;
 	parts_[0] = num;
@@ -23,18 +16,12 @@ uint2048::uint2048(uint64_t num){
 
 // - copy -
 
-/*
-copys the array from the input uint2048 into a new one
-*/
 uint2048::uint2048(const uint2048& num){
 	for (auto i = 0u; i < 32u; ++i) parts_[i] = num.parts_[i];
 }
 
 // --- functions ---
 
-/*
-finds and returns the index of the most significant bit
-*/
 bool uint2048::highest_bit(uint16_t* index) const{
 	auto res = 0ul;
 	auto part = 0ull;
@@ -66,11 +53,6 @@ bool uint2048::highest_bit(uint16_t* index) const{
 	return false;
 }
 
-/*
-returns the number of bits the current number takes up.
-the number of bits is equal to the index of the highest bit + 1
-or if there are no bits, it is 0
-*/
 uint16_t uint2048::num_bits() const{
 	uint16_t res = 0u;
 
@@ -289,7 +271,6 @@ uint2048 uint2048::operator++(int){
 // - arithmetic -
 
 uint2048 operator+(const uint2048& operand_a, const uint2048& operand_b){
-	printf("beh?\n");
 	uint2048 ret;
 	uint64_t a, b;
 	uint64_t* c;
@@ -647,5 +628,31 @@ bool operator>=(const uint2048& operand_a, const uint2048& operand_b){
 }
 
 
+// --- static functions ---
 
+uint2048 gcd_mod(const uint2048& a, const uint2048& b){
+	uint2048 temp_a, temp_b;
+	uint2048 temp_t;
+
+	temp_a = a;
+	temp_b = b;
+	while (temp_b != 0ull){
+		temp_t = temp_b;
+		temp_b = temp_a % temp_b;
+		temp_a = temp_t;
+	}
+	return temp_a;
+}
+
+uint2048 gcd_sub(const uint2048& a, const uint2048& b){
+	uint2048 temp_a, temp_b;
+
+	temp_a = a;
+	temp_b = b;
+	while (temp_a != temp_b){
+		if (temp_a > temp_b) temp_a -= temp_b;
+		else temp_b -= temp_a;
+	}
+	return temp_a;
+}
 

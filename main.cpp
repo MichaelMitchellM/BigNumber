@@ -15,10 +15,16 @@ int main(){
 	uint2048 num_a, num_b;
 	uint2048 num_c;
 
+	uint2048 p, q, n;
+	uint2048 totient;
+	uint2048 e;
+
+
 	num_a = uint2048::Random(1024u, &r);
 	num_b = uint2048::Random(1024u, &r);
 
 	//std::cout << num_a.to_bitset().to_ullong() << std::endl;
+
 
 	if (!(num_a & 1ull)){
 		++num_a;
@@ -30,6 +36,7 @@ int main(){
 		if (is) break;
 		num_a += 2ull;
 	}
+
 
 	std::cout << (num_a).to_bitset() << std::endl;
 
